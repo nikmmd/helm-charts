@@ -1,0 +1,42 @@
+{{- if .Values.certificate.enabled }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "webapp.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "webapp.labels" . | nindent 4 }}
+  {{- with .Values.certificate.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  secretName: {{ .Values.certificate.secretName | default (printf "%s-tls" (include "webapp.fullname" .)) }}
+  duration: {{ .Values.certificate.duration }}
+  renewBefore: {{ .Values.certificate.renewBefore }}
+  {{- if .Values.certificate.commonName }}
+  commonName: {{ .Values.certificate.commonName }}
+  {{- end }}
+  {{- with .Values.certificate.dnsNames }}
+  dnsNames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.certificate.ipAddresses }}
+  ipAddresses:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with .Values.certificate.uris }}
+  uris:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  issuerRef:
+    name: {{ .Values.certificate.issuerRef.name }}
+    kind: {{ .Values.certificate.issuerRef.kind | default "ClusterIssuer" }}
+    {{- if .Values.certificate.issuerRef.group }}
+    group: {{ .Values.certificate.issuerRef.group }}
+    {{- end }}
+  {{- with .Values.certificate.privateKey }}
+  privateKey:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+{{- end }}

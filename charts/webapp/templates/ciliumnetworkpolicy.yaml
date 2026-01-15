@@ -1,0 +1,81 @@
+{{- if and .Values.networkPolicy.enabled .Values.networkPolicy.useCilium }}
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: {{ include "webapp.fullname" . }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "webapp.labels" . | nindent 4 }}
+spec:
+  endpointSelector:
+    matchLabels:
+      {{- include "webapp.selectorLabels" . | nindent 6 }}
+  {{- if or .Values.networkPolicy.ingress .Values.networkPolicy.ciliumIngressL7 }}
+  ingress:
+    {{- range .Values.networkPolicy.ingress }}
+    - {{- if .from }}
+      fromEndpoints:
+        {{- range .from }}
+        {{- if .podSelector }}
+        - matchLabels:
+            {{- toYaml .podSelector.matchLabels | nindent 14 }}
+        {{- end }}
+        {{- if .namespaceSelector }}
+        - matchLabels:
+            {{- toYaml .namespaceSelector.matchLabels | nindent 14 }}
+        {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- if .ports }}
+      toPorts:
+        {{- range .ports }}
+        - ports:
+            - port: {{ .port | quote }}
+              protocol: {{ .protocol | default "TCP" }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- with .Values.networkPolicy.ciliumIngressL7 }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- end }}
+  {{- if or .Values.networkPolicy.egress .Values.networkPolicy.ciliumEgressL7 .Values.networkPolicy.ciliumEgressFQDN }}
+  egress:
+    {{- range .Values.networkPolicy.egress }}
+    - {{- if .to }}
+      toEndpoints:
+        {{- range .to }}
+        {{- if .podSelector }}
+        - matchLabels:
+            {{- toYaml .podSelector.matchLabels | nindent 14 }}
+        {{- end }}
+        {{- if .namespaceSelector }}
+        - matchLabels:
+            {{- toYaml .namespaceSelector.matchLabels | nindent 14 }}
+        {{- end }}
+        {{- end }}
+      {{- end }}
+      {{- if .ports }}
+      toPorts:
+        {{- range .ports }}
+        - ports:
+            - port: {{ .port | quote }}
+              protocol: {{ .protocol | default "TCP" }}
+        {{- end }}
+      {{- end }}
+    {{- end }}
+    {{- with .Values.networkPolicy.ciliumEgressL7 }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+    {{- if .Values.networkPolicy.ciliumEgressFQDN }}
+    - toFQDNs:
+        {{- toYaml .Values.networkPolicy.ciliumEgressFQDN | nindent 8 }}
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+            - port: "80"
+              protocol: TCP
+    {{- end }}
+  {{- end }}
+{{- end }}

@@ -1,0 +1,419 @@
+# Default values for webapp chart
+
+# -- Number of replicas (ignored if autoscaling or keda is enabled)
+replicaCount: 1
+
+image:
+  # -- Container image repository
+  repository: ""
+  # -- Container image tag (defaults to Chart appVersion)
+  tag: ""
+  # -- Image pull policy
+  pullPolicy: IfNotPresent
+
+# -- Image pull secrets for private registries
+imagePullSecrets: []
+
+# -- Override the chart name
+nameOverride: ""
+# -- Override the full release name
+fullnameOverride: ""
+
+# -- Additional pod annotations
+podAnnotations: {}
+
+# -- Additional pod labels
+podLabels: {}
+
+# -- Pod security context
+podSecurityContext: {}
+  # fsGroup: 1000
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# -- Container security context
+securityContext: {}
+  # allowPrivilegeEscalation: false
+  # capabilities:
+  #   drop:
+  #     - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+# -- Container resource requests and limits
+resources: {}
+  # limits:
+  #   cpu: 500m
+  #   memory: 512Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+# -- Node selector for pod scheduling
+nodeSelector: {}
+
+# -- Tolerations for pod scheduling
+tolerations: []
+
+# -- Affinity rules for pod scheduling
+affinity: {}
+
+# -- Topology spread constraints
+topologySpreadConstraints: []
+
+# -- Additional sidecar containers
+extraContainers: []
+
+# -- Init containers
+initContainers: []
+
+# -- Additional volumes
+extraVolumes: []
+
+# -- Additional volume mounts for the main container
+extraVolumeMounts: []
+
+# -- Environment variables
+env: []
+  # - name: FOO
+  #   value: bar
+  # - name: SECRET_VAL
+  #   valueFrom:
+  #     secretKeyRef:
+  #       name: my-secret
+  #       key: password
+
+# -- Environment variable sources (configMapRef, secretRef)
+envFrom: []
+  # - configMapRef:
+  #     name: my-config
+  # - secretRef:
+  #     name: my-secret
+
+# -- Liveness probe configuration
+livenessProbe: {}
+  # httpGet:
+  #   path: /healthz
+  #   port: http
+  # initialDelaySeconds: 10
+  # periodSeconds: 10
+
+# -- Readiness probe configuration
+readinessProbe: {}
+  # httpGet:
+  #   path: /readyz
+  #   port: http
+  # initialDelaySeconds: 5
+  # periodSeconds: 5
+
+# -- Startup probe configuration
+startupProbe: {}
+  # httpGet:
+  #   path: /healthz
+  #   port: http
+  # failureThreshold: 30
+  # periodSeconds: 10
+
+# -- Container ports
+ports:
+  - name: http
+    containerPort: 8080
+    protocol: TCP
+
+# -- Command override
+command: []
+
+# -- Args override
+args: []
+
+# Service configuration
+service:
+  # -- Service type
+  type: ClusterIP
+  # -- Service port
+  port: 80
+  # -- Target port on the container
+  targetPort: http
+  # -- Node port (only for NodePort/LoadBalancer)
+  nodePort: null
+  # -- Additional service annotations
+  annotations: {}
+  # -- Additional ports
+  extraPorts: []
+
+# Ingress configuration
+ingress:
+  # -- Enable ingress
+  enabled: false
+  # -- Ingress class name
+  className: ""
+  # -- Ingress annotations
+  annotations: {}
+    # nginx.ingress.kubernetes.io/rewrite-target: /
+  # -- Ingress hosts configuration
+  hosts: []
+    # - host: example.com
+    #   paths:
+    #     - path: /
+    #       pathType: Prefix
+  # -- Ingress TLS configuration
+  tls: []
+    # - secretName: example-tls
+    #   hosts:
+    #     - example.com
+
+# HTTPRoute configuration (Gateway API)
+httpRoute:
+  # -- Enable HTTPRoute
+  enabled: false
+  # -- Parent gateway references
+  parentRefs: []
+    # - name: my-gateway
+    #   namespace: gateway-system
+  # -- Hostnames for the route
+  hostnames: []
+    # - example.com
+  # -- Routing rules
+  rules: []
+    # - matches:
+    #     - path:
+    #         type: PathPrefix
+    #         value: /
+    #   backendRefs:
+    #     - name: webapp
+    #       port: 80
+
+# HPA configuration
+autoscaling:
+  # -- Enable HPA (mutually exclusive with keda.enabled)
+  enabled: false
+  # -- Minimum replicas
+  minReplicas: 1
+  # -- Maximum replicas
+  maxReplicas: 10
+  # -- Target CPU utilization percentage
+  targetCPUUtilizationPercentage: 80
+  # -- Target memory utilization percentage
+  targetMemoryUtilizationPercentage: null
+  # -- Custom metrics for scaling
+  customMetrics: []
+  # -- Scale behavior configuration
+  behavior: {}
+    # scaleDown:
+    #   stabilizationWindowSeconds: 300
+    # scaleUp:
+    #   stabilizationWindowSeconds: 0
+
+# KEDA configuration
+keda:
+  # -- Enable KEDA ScaledObject (mutually exclusive with autoscaling.enabled)
+  enabled: false
+  # -- Minimum replicas
+  minReplicaCount: 1
+  # -- Maximum replicas
+  maxReplicaCount: 10
+  # -- Polling interval in seconds
+  pollingInterval: 30
+  # -- Cooldown period in seconds
+  cooldownPeriod: 300
+  # -- Idle replica count (set to 0 for scale-to-zero)
+  idleReplicaCount: null
+  # -- Fallback configuration
+  fallback: {}
+    # failureThreshold: 3
+    # replicas: 2
+  # -- KEDA triggers
+  triggers: []
+    # - type: prometheus
+    #   metadata:
+    #     serverAddress: http://prometheus:9090
+    #     metricName: http_requests_total
+    #     threshold: "100"
+    #     query: sum(rate(http_requests_total[2m]))
+  # -- Additional ScaledObject annotations
+  annotations: {}
+
+# PDB configuration
+pdb:
+  # -- Enable PodDisruptionBudget
+  enabled: false
+  # -- Minimum available pods (mutually exclusive with maxUnavailable)
+  minAvailable: 1
+  # -- Maximum unavailable pods (mutually exclusive with minAvailable)
+  maxUnavailable: null
+  # -- Unhealthy pod eviction policy
+  unhealthyPodEvictionPolicy: null
+
+# Metrics and monitoring configuration
+metrics:
+  serviceMonitor:
+    # -- Enable ServiceMonitor for Prometheus Operator
+    enabled: false
+    # -- Scrape interval
+    interval: 30s
+    # -- Scrape timeout
+    scrapeTimeout: null
+    # -- Metrics path
+    path: /metrics
+    # -- Port name to scrape
+    port: http
+    # -- Additional labels for ServiceMonitor
+    additionalLabels: {}
+    # -- Metric relabeling configs
+    metricRelabelings: []
+    # -- Relabeling configs
+    relabelings: []
+    # -- Namespace selector
+    namespaceSelector: {}
+    # -- Honor labels
+    honorLabels: false
+
+  prometheusRule:
+    # -- Enable PrometheusRule for alerting
+    enabled: false
+    # -- Additional labels for PrometheusRule
+    additionalLabels: {}
+    # -- Alert and recording rules
+    rules: []
+      # - alert: HighErrorRate
+      #   expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.1
+      #   for: 5m
+      #   labels:
+      #     severity: critical
+      #   annotations:
+      #     summary: High error rate detected
+
+# Certificate configuration (cert-manager)
+certificate:
+  # -- Enable Certificate resource
+  enabled: false
+  # -- Secret name for the certificate
+  secretName: ""
+  # -- Issuer reference
+  issuerRef:
+    # -- Issuer name
+    name: ""
+    # -- Issuer kind (Issuer or ClusterIssuer)
+    kind: ClusterIssuer
+    # -- Issuer group (optional)
+    group: ""
+  # -- DNS names for the certificate
+  dnsNames: []
+  # -- Certificate duration
+  duration: 2160h
+  # -- Renew before expiry
+  renewBefore: 360h
+  # -- Additional certificate annotations
+  annotations: {}
+
+# Network policy configuration
+networkPolicy:
+  # -- Enable network policy
+  enabled: false
+  # -- Use CiliumNetworkPolicy instead of NetworkPolicy
+  useCilium: false
+  # -- Policy types to apply
+  policyTypes:
+    - Ingress
+    - Egress
+  # -- Ingress rules
+  ingress: []
+    # - from:
+    #     - namespaceSelector:
+    #         matchLabels:
+    #           name: ingress-nginx
+    #     - podSelector:
+    #         matchLabels:
+    #           app: frontend
+    #   ports:
+    #     - protocol: TCP
+    #       port: 8080
+  # -- Egress rules
+  egress: []
+    # - to:
+    #     - namespaceSelector: {}
+    #   ports:
+    #     - protocol: TCP
+    #       port: 443
+  # -- Cilium-specific: L7 ingress rules
+  ciliumIngressL7: []
+  # -- Cilium-specific: L7 egress rules
+  ciliumEgressL7: []
+  # -- Cilium-specific: FQDN egress rules
+  ciliumEgressFQDN: []
+    # - matchName: "api.example.com"
+
+# ServiceAccount configuration
+serviceAccount:
+  # -- Create a service account
+  create: true
+  # -- Service account annotations
+  annotations: {}
+  # -- Service account name (auto-generated if not set)
+  name: ""
+  # -- Automount service account token
+  automountServiceAccountToken: true
+
+# ConfigMap configuration
+configMap:
+  # -- ConfigMap data (creates ConfigMap if non-empty)
+  data: {}
+    # config.yaml: |
+    #   key: value
+  # -- ConfigMap annotations
+  annotations: {}
+
+# Secret configuration
+secret:
+  # -- Secret data (creates Secret if non-empty, values should be base64 encoded)
+  data: {}
+  # -- Secret string data (creates Secret if non-empty, values are plain text)
+  stringData: {}
+  # -- Secret annotations
+  annotations: {}
+
+# ExternalSecret configuration (external-secrets operator)
+externalSecret:
+  # -- Enable ExternalSecret resource
+  enabled: false
+  # -- Refresh interval for syncing secrets
+  refreshInterval: 1h
+  # -- Secret store reference
+  secretStoreRef:
+    # -- Name of the SecretStore or ClusterSecretStore
+    name: ""
+    # -- Kind of secret store (SecretStore or ClusterSecretStore)
+    kind: ClusterSecretStore
+  # -- Target secret name (defaults to webapp.secretName)
+  targetSecretName: ""
+  # -- Creation policy for the target secret
+  creationPolicy: Owner
+  # -- Deletion policy for the target secret
+  deletionPolicy: Retain
+  # -- Template for the target secret (optional)
+  template: {}
+    # type: Opaque
+    # data:
+    #   config.yaml: |
+    #     db_host: {{ .db_host }}
+    #     db_pass: {{ .db_pass }}
+  # -- Individual secret data mappings
+  data: []
+    # - secretKey: db-password
+    #   remoteRef:
+    #     key: prod/myapp/db
+    #     property: password
+    # - secretKey: api-key
+    #   remoteRef:
+    #     key: prod/myapp/api
+    #     property: key
+  # -- Bulk fetch from secret store
+  dataFrom: []
+    # - extract:
+    #     key: prod/myapp/config
+    # - find:
+    #     name:
+    #       regexp: "prod/myapp/.*"
+  # -- Additional ExternalSecret annotations
+  annotations: {}

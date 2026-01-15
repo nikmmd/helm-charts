@@ -1,0 +1,94 @@
+name: Release Charts
+
+on:
+  push:
+    tags:
+      - '*-v*'
+  workflow_dispatch:
+    inputs:
+      chart:
+        description: 'Chart to release (e.g., webapp)'
+        required: true
+        type: string
+      version:
+        description: 'Version to release (e.g., 0.1.0)'
+        required: true
+        type: string
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Lint charts
+        run: |
+          for chart in charts/*/; do
+            echo "Linting $chart..."
+            helm lint "$chart"
+          done
+
+  release:
+    runs-on: ubuntu-latest
+    needs: lint
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Log in to GHCR
+        run: |
+          echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+
+      - name: Determine chart and version
+        id: chart-info
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            CHART="${{ inputs.chart }}"
+            VERSION="${{ inputs.version }}"
+          else
+            # Extract from tag: chartname-vX.Y.Z
+            TAG="${GITHUB_REF#refs/tags/}"
+            CHART="${TAG%-v*}"
+            VERSION="${TAG#*-v}"
+          fi
+          echo "chart=$CHART" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Chart: $CHART, Version: $VERSION"
+
+      - name: Update chart version
+        run: |
+          CHART="${{ steps.chart-info.outputs.chart }}"
+          VERSION="${{ steps.chart-info.outputs.version }}"
+          sed -i "s/^version:.*/version: $VERSION/" "charts/$CHART/Chart.yaml"
+
+      - name: Package chart
+        run: |
+          CHART="${{ steps.chart-info.outputs.chart }}"
+          helm package "charts/$CHART" -d .cr-release-packages
+
+      - name: Push chart to GHCR
+        run: |
+          CHART="${{ steps.chart-info.outputs.chart }}"
+          VERSION="${{ steps.chart-info.outputs.version }}"
+          helm push ".cr-release-packages/$CHART-$VERSION.tgz" "oci://${{ env.REGISTRY }}/${{ github.repository_owner }}"
