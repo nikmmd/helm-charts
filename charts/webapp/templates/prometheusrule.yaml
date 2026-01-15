@@ -3,7 +3,6 @@ apiVersion: monitoring.coreos.com/v1
 kind: PrometheusRule
 metadata:
   name: {{ include "webapp.fullname" . }}
-  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "webapp.labels" . | nindent 4 }}
     {{- with .Values.metrics.prometheusRule.additionalLabels }}

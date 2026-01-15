@@ -3,7 +3,6 @@ apiVersion: keda.sh/v1alpha1
 kind: ScaledObject
 metadata:
   name: {{ include "webapp.fullname" . }}
-  namespace: {{ .Release.Namespace }}
   labels:
     {{- include "webapp.labels" . | nindent 4 }}
   {{- with .Values.keda.annotations }}
