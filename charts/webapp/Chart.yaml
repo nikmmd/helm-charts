@@ -9,4 +9,5 @@ keywords:
   - deployment
   - kubernetes
 maintainers:
-  - name: gruphelm
+  - name: nikmmd
+    email: nikmmd@users.noreply.github.com
