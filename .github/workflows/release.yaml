@@ -91,4 +91,4 @@ jobs:
         run: |
           CHART="${{ steps.chart-info.outputs.chart }}"
           VERSION="${{ steps.chart-info.outputs.version }}"
-          helm push ".cr-release-packages/$CHART-$VERSION.tgz" "oci://${{ env.REGISTRY }}/${{ github.repository_owner }}"
+          helm push ".cr-release-packages/$CHART-$VERSION.tgz" "oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/helm-charts"
